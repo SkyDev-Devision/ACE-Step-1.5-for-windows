@@ -3574,7 +3574,6 @@ def create_app() -> FastAPI:
         wrap_response=_wrap_response,
         start_tensorboard=_start_tensorboard,
         stop_tensorboard=_stop_tensorboard,
-        temporary_llm_model=_temporary_llm_model,
         atomic_write_json=_atomic_write_json,
         append_jsonl=_append_jsonl,
     )
