@@ -1,7 +1,8 @@
 
 # ============= Command Line Parameters | 命令行参数 =====================
 param(
-  [int]$Port = 8001                           # Server port
+  [int]$Port = 8001,                          # Server port
+  [string]$ServerHost = "127.0.0.1"                 # Server host
 )
 
 # ============= DO NOT MODIFY CONTENTS BELOW | 请勿修改下方内容 =====================
@@ -46,6 +47,8 @@ $uv_args = [System.Collections.ArrayList]::new()
 # Server configuration
 [void]$ext_args.Add("--port")
 [void]$ext_args.Add($Port)
+[void]$ext_args.Add("--host")
+[void]$ext_args.Add($ServerHost)
 
 # run train
 uv run $uv_args acestep-api $ext_args
