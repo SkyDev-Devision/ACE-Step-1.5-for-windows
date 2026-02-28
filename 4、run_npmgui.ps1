@@ -17,14 +17,25 @@ foreach ($Path in $VenvPaths) {
   }
 }
 
-# Run setup script (installs all dependencies)
-# 运行安装脚本（安装所有依赖）
-if (Test-Path "start.bat") {
-    Write-Output "Running start.bat..."
-    & .\start.bat
+# Run startup script (OS-aware)
+# 运行启动脚本（根据操作系统选择）
+if ($IsLinux -or $IsMacOS) {
+    if (Test-Path "start.sh") {
+        Write-Output "Running start.sh..."
+        & bash ./start.sh
+    }
+    else {
+        Write-Warning "start.sh not found"
+    }
 }
 else {
-    Write-Warning "Setup script not found"
+    if (Test-Path "start.bat") {
+        Write-Output "Running start.bat..."
+        & .\start.bat
+    }
+    else {
+        Write-Warning "start.bat not found"
+    }
 }
 
 Write-Output "Start finished"
