@@ -51,7 +51,7 @@ $uv_args = [System.Collections.ArrayList]::new()
 [void]$ext_args.Add($ServerHost)
 
 # run train
-uv run $uv_args acestep-api $ext_args
+python $uv_args acestep/api_server.py $ext_args
 
 Write-Output "Start finished"
 Read-Host | Out-Null ;
