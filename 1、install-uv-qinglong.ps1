@@ -225,14 +225,25 @@ else {
 
 Set-Location ace-step-ui
 
-# Run setup script (installs all dependencies)
-# 运行安装脚本（安装所有依赖）
-if (Test-Path "setup.bat") {
-    Write-Output "Running setup.bat..."
-    & .\setup.bat
+# Run setup script (OS-aware)
+# 运行安装脚本（根据操作系统选择）
+if ($IsLinux -or $IsMacOS) {
+    if (Test-Path "setup.sh") {
+        Write-Output "Running setup.sh..."
+        & bash ./setup.sh
+    }
+    else {
+        Write-Warning "setup.sh not found"
+    }
 }
 else {
-    Write-Warning "Setup script not found"
+    if (Test-Path "setup.bat") {
+        Write-Output "Running setup.bat..."
+        & .\setup.bat
+    }
+    else {
+        Write-Warning "setup.bat not found"
+    }
 }
 
 Write-Output "Install finished"
