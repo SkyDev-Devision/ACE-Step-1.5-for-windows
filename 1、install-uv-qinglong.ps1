@@ -208,7 +208,7 @@ else {
     if (-not $skip_dit) {
         foreach ($model in $dit_models) {
             Write-Output "`n正在下载 DiT 模型: $model / Downloading DiT model: $model"
-            uv run acestep-download --model $model
+            ~/.local/bin/uv run acestep-download --model $model
         }
     }
 
@@ -216,10 +216,10 @@ else {
     if (-not $skip_lm) {
         foreach ($model in $lm_models) {
             Write-Output "`n正在下载 LM 模型: $model / Downloading LM model: $model"
-            uv run acestep-download --model $model
+            ~/.local/bin/uv run acestep-download --model $model
         }
     }
-  
+
     Write-Output "`n模型下载完成 / Model download completed"
 }
 
