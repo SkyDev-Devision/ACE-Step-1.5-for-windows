@@ -94,8 +94,17 @@ class LLMHandler:
         try:
             if self.llm_backend == "vllm":
                 try:
+                    # Prefer full engine shutdown so CUDA graph/KV cache resources are
+                    # deterministically released before training starts.
+                    if hasattr(self.llm, "exit"):
+                        self.llm.exit()
                     if hasattr(self.llm, "reset"):
                         self.llm.reset()
+                except Exception:
+                    pass
+                try:
+                    from nanovllm.utils.context import reset_context
+                    reset_context()
                 except Exception:
                     pass
                 self._cleanup_torch_distributed_state()
@@ -592,7 +601,7 @@ class LLMHandler:
 
             # Disable CUDA/HIP graph capture on ROCm (unverified on RDNA3 Windows)
             is_rocm = hasattr(torch.version, 'hip') and torch.version.hip is not None
-            enforce_eager_for_vllm = bool(is_rocm)
+            enforce_eager_for_vllm = True
 
             # Auto-detect best backend on Apple Silicon
             if backend == "mlx" or (backend == "vllm" and device == "mps"):
