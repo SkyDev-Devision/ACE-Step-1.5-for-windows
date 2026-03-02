@@ -44,7 +44,8 @@ class InitServiceOffloadContextMixin:
         else:
             self._recursive_to_device(model, self.device, self.dtype)
 
-        if model_name == "model" and hasattr(self, "silence_latent"):
+        # Sync silence_latent when loading VAE or model (both may use it)
+        if model_name in ("vae", "model") and hasattr(self, "silence_latent"):
             self.silence_latent = self.silence_latent.to(self.device).to(self.dtype)
 
         load_time = time.time() - start_time
