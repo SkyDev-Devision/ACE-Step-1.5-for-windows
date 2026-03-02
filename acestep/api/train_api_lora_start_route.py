@@ -54,8 +54,8 @@ def register_lora_training_start_route(
         mgr.offload_model_tokenizer_to_cpu()
         mgr.offload_model_detokenizer_to_cpu()
         mgr.unload_llm()
-        mgr.flush_gpu_cache()
         mgr.move_decoder_to(str(handler.device))
+        mgr.flush_gpu_cache()
 
         try:
             from acestep.training.configs import LoRAConfig as LoRAConfigClass, TrainingConfig
