@@ -56,4 +56,5 @@ xxhash
 lightning-fabric
 tensorboard
 git+https://github.com/sdbds/LyCORIS
+flashoptim
 mutagen
