@@ -611,7 +611,7 @@ class LLMHandler:
                         logger.info(f"Jetson GPU detected ({dev_name}): disabling CUDA graph capture for nano-vllm")
                 except Exception:
                     pass
-            enforce_eager_for_vllm = bool(is_rocm or is_jetson)
+            enforce_eager_for_vllm =True
 
             # Auto-detect best backend on Apple Silicon
             if backend == "mlx" or (backend == "vllm" and device == "mps"):

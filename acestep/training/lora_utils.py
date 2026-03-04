@@ -5,16 +5,30 @@ Provides utilities for inspecting and merging LoRA adapters.
 Uses PEFT (Parameter-Efficient Fine-Tuning) library for LoRA implementation.
 """
 
-from typing import Dict, Any
+import os
+from typing import Optional, List, Dict, Any, Tuple
 from loguru import logger
+import types
+
+import torch
+import torch.nn as nn
+from safetensors.torch import load_file
+
+from acestep.training.path_safety import safe_path
 
 try:
-    from peft import PeftModel
-
+    from peft import (
+        get_peft_model,
+        LoraConfig,
+        TaskType,
+        PeftModel,
+    )
     PEFT_AVAILABLE = True
 except ImportError:
     PEFT_AVAILABLE = False
     logger.warning("PEFT library not installed. LoRA training will not be available.")
+
+from acestep.training.configs import LoRAConfig
 
 
 def check_peft_available() -> bool:
