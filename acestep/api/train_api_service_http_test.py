@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from contextlib import contextmanager
 from typing import Any, Dict, Optional
 import unittest
 from unittest import mock
@@ -24,13 +23,6 @@ async def _verify_api_key(authorization: str | None = Header(None)) -> None:
 
     if authorization != "Bearer test-token":
         raise HTTPException(status_code=401, detail="Unauthorized")
-
-
-@contextmanager
-def _temporary_llm_model(_app: FastAPI, _llm: Any, _lm_model_path: Optional[str]):
-    """No-op context manager used by dataset routes during registration."""
-
-    yield
 
 
 class TrainingApiServiceHttpTests(unittest.TestCase):
@@ -58,7 +50,6 @@ class TrainingApiServiceHttpTests(unittest.TestCase):
             wrap_response=_wrap_response,
             start_tensorboard=_start_tensorboard,
             stop_tensorboard=_stop_tensorboard,
-            temporary_llm_model=_temporary_llm_model,
             atomic_write_json=lambda _path, _payload: None,
             append_jsonl=lambda _path, _record: None,
         )

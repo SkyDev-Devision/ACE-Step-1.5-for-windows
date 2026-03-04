@@ -52,7 +52,6 @@ def configure_api_routes(
     log_buffer: Any,
     runtime_start_tensorboard: Callable[..., Any],
     runtime_stop_tensorboard: Callable[..., Any],
-    runtime_temporary_llm_model: Callable[..., Any],
     runtime_atomic_write_json: Callable[..., Any],
     runtime_append_jsonl: Callable[..., Any],
 ) -> None:
@@ -116,13 +115,6 @@ def configure_api_routes(
             stop_tensorboard_fn=runtime_stop_tensorboard,
         ),
         stop_tensorboard=runtime_stop_tensorboard,
-        temporary_llm_model=partial(
-            runtime_temporary_llm_model,
-            get_project_root=get_project_root,
-            get_model_name=get_model_name,
-            ensure_model_downloaded=ensure_model_downloaded,
-            env_bool=env_bool,
-        ),
         atomic_write_json=runtime_atomic_write_json,
         append_jsonl=runtime_append_jsonl,
     )

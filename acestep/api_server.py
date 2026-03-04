@@ -78,7 +78,6 @@ from acestep.api.runtime_helpers import (
     atomic_write_json as _runtime_atomic_write_json,
     start_tensorboard as _runtime_start_tensorboard,
     stop_tensorboard as _runtime_stop_tensorboard,
-    temporary_llm_model as _runtime_temporary_llm_model,
 )
 from acestep.api.model_download import (
     ensure_model_downloaded as _ensure_model_downloaded,
@@ -345,7 +344,6 @@ def create_app() -> FastAPI:
         log_buffer=log_buffer,
         runtime_start_tensorboard=_runtime_start_tensorboard,
         runtime_stop_tensorboard=_runtime_stop_tensorboard,
-        runtime_temporary_llm_model=_runtime_temporary_llm_model,
         runtime_atomic_write_json=_runtime_atomic_write_json,
         runtime_append_jsonl=_runtime_append_jsonl,
     )

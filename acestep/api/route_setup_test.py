@@ -72,7 +72,6 @@ class RouteSetupTests(unittest.TestCase):
             log_buffer=MagicMock(),
             runtime_start_tensorboard=MagicMock(),
             runtime_stop_tensorboard=MagicMock(),
-            runtime_temporary_llm_model=MagicMock(),
             runtime_atomic_write_json=MagicMock(),
             runtime_append_jsonl=MagicMock(),
         )
