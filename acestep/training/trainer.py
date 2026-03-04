@@ -36,13 +36,15 @@ except ImportError:
     logger.warning("bitsandbytes not installed. Using standard AdamW.")
 
 from acestep.training.configs import LoRAConfig, LoKRConfig, TrainingConfig
+from acestep.training.lora_injection import inject_lora_into_dit
 from acestep.training.lora_utils import (
-    inject_lora_into_dit,
+    check_peft_available,
     load_lora_training_weights,
+)
+from acestep.training.lora_checkpoint import (
     save_lora_weights,
     save_training_checkpoint,
     load_training_checkpoint,
-    check_peft_available,
 )
 from acestep.training.lokr_utils import (
     inject_lokr_into_dit,
