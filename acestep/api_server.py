@@ -346,6 +346,7 @@ def create_app() -> FastAPI:
         runtime_stop_tensorboard=_runtime_stop_tensorboard,
         runtime_atomic_write_json=_runtime_atomic_write_json,
         runtime_append_jsonl=_runtime_append_jsonl,
+        create_sample=create_sample,
     )
 
     return app
