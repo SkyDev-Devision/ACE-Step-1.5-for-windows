@@ -54,7 +54,6 @@ class PreprocessMixin:
         skip_existing: bool = False,
         preprocess_mode: str = "lora",
         progress_callback=None,
-        skip_existing: bool = False,
     ) -> Tuple[List[str], str]:
         """Preprocess all labeled samples to tensor files for efficient training.
 

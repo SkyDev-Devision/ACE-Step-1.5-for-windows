@@ -9,10 +9,10 @@ authors = [{ name = "Xingkai Yu" }]
 license = {text = "MIT"}
 readme = "README.md"
 description = "a lightweight vLLM implementation built from scratch"
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.11,<3.12"
 dependencies = [
     "torch>=2.4.0",
-    # Triton and Flash Attention are optional on ROCm (Python 3.12) - SDPA fallback used instead
+    # Triton is required for the supported Python 3.11 paths; Flash Attention stays optional on Windows.
     "triton-windows>=3.0.0,<3.5; sys_platform == 'win32' and python_version == '3.11'",
     "triton>=3.0.0; sys_platform == 'linux' and python_version == '3.11'",
     "transformers>=4.51.0",
