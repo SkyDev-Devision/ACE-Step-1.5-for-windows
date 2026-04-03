@@ -321,9 +321,12 @@ echo 1^) acestep-v15-base
 echo 2^) acestep-v15-sft
 echo 3^) acestep-v15-turbo  (Recommended)
 echo 4^) acestep-v15-turbo-rl
+echo 5^) acestep-v15-xl-base   (XL 4B - higher quality, >=12GB VRAM)
+echo 6^) acestep-v15-xl-sft    (XL 4B SFT - >=12GB VRAM)
+echo 7^) acestep-v15-xl-turbo  (XL 4B Turbo - >=12GB VRAM)
 echo.
 :dit_choice_ask
-    set /p DIT_CHOICE="Enter selection (1-4): "
+    set /p DIT_CHOICE="Enter selection (1-7): "
     if "%DIT_CHOICE%"=="1" (
         set CONFIG_PATH=--config_path acestep-v15-base
         goto dit_choice_done
@@ -340,7 +343,19 @@ echo.
         set CONFIG_PATH=--config_path acestep-v15-turbo-rl
         goto dit_choice_done
     )
-    echo Invalid input. Please enter a number between 1 and 4.
+    if "%DIT_CHOICE%"=="5" (
+        set CONFIG_PATH=--config_path acestep-v15-xl-base
+        goto dit_choice_done
+    )
+    if "%DIT_CHOICE%"=="6" (
+        set CONFIG_PATH=--config_path acestep-v15-xl-sft
+        goto dit_choice_done
+    )
+    if "%DIT_CHOICE%"=="7" (
+        set CONFIG_PATH=--config_path acestep-v15-xl-turbo
+        goto dit_choice_done
+    )
+    echo Invalid input. Please enter a number between 1 and 7.
     goto dit_choice_ask
 :dit_choice_done
 

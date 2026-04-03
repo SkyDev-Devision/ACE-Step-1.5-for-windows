@@ -113,9 +113,12 @@ _load_manual() {
     echo "2) acestep-v15-sft"
     echo "3) acestep-v15-turbo (Recommended)"
     echo "4) acestep-v15-turbo-rl"
+    echo "5) acestep-v15-xl-base (XL 4B - higher quality, >=12GB VRAM)"
+    echo "6) acestep-v15-xl-sft (XL 4B SFT - >=12GB VRAM)"
+    echo "7) acestep-v15-xl-turbo (XL 4B Turbo - >=12GB VRAM)"
     echo
     while true; do
-        read -rp "Enter selection (1-4): " DIT_CHOICE
+        read -rp "Enter selection (1-7): " DIT_CHOICE
         case "$DIT_CHOICE" in
             1)
                 CONFIG_PATH="--config_path acestep-v15-base"
@@ -129,8 +132,17 @@ _load_manual() {
             4)
                 CONFIG_PATH="--config_path acestep-v15-turbo-rl"
                 break ;;
+            5)
+                CONFIG_PATH="--config_path acestep-v15-xl-base"
+                break ;;
+            6)
+                CONFIG_PATH="--config_path acestep-v15-xl-sft"
+                break ;;
+            7)
+                CONFIG_PATH="--config_path acestep-v15-xl-turbo"
+                break ;;
             *)
-                echo "Invalid input. Please enter a number between 1 and 4." ;;
+                echo "Invalid input. Please enter a number between 1 and 7." ;;
         esac
     done
 

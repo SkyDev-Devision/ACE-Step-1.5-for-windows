@@ -294,9 +294,12 @@ if %MODEL_COUNT% EQU 0 (
     echo 2^) acestep-v15-base    (Base model^)
     echo 3^) acestep-v15-sft     (Supervised fine-tuned^)
     echo 4^) acestep-v15-turbo-rl  (RL optimized^)
+    echo 5^) acestep-v15-xl-base   (XL 4B - higher quality, ^>=12GB VRAM^)
+    echo 6^) acestep-v15-xl-sft    (XL 4B SFT - ^>=12GB VRAM^)
+    echo 7^) acestep-v15-xl-turbo  (XL 4B Turbo - ^>=12GB VRAM^)
     echo.
     :dit_choice_ask
-        set /p DIT_CHOICE="Enter selection (1-4): "
+        set /p DIT_CHOICE="Enter selection (1-7): "
         if "%DIT_CHOICE%"=="1" (
             set CONFIG_PATH=--config_path acestep-v15-turbo
             set CONFIG_PATH_DISPLAY=acestep-v15-turbo
@@ -317,7 +320,22 @@ if %MODEL_COUNT% EQU 0 (
             set CONFIG_PATH_DISPLAY=acestep-v15-turbo-rl
             goto dit_choice_done
         )
-        echo Invalid input. Please enter a number between 1 and 4.
+        if "%DIT_CHOICE%"=="5" (
+            set CONFIG_PATH=--config_path acestep-v15-xl-base
+            set CONFIG_PATH_DISPLAY=acestep-v15-xl-base
+            goto dit_choice_done
+        )
+        if "%DIT_CHOICE%"=="6" (
+            set CONFIG_PATH=--config_path acestep-v15-xl-sft
+            set CONFIG_PATH_DISPLAY=acestep-v15-xl-sft
+            goto dit_choice_done
+        )
+        if "%DIT_CHOICE%"=="7" (
+            set CONFIG_PATH=--config_path acestep-v15-xl-turbo
+            set CONFIG_PATH_DISPLAY=acestep-v15-xl-turbo
+            goto dit_choice_done
+        )
+        echo Invalid input. Please enter a number between 1 and 7.
         goto dit_choice_ask
     :dit_choice_done
 )

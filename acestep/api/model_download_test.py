@@ -13,6 +13,25 @@ from acestep.api import model_download
 class ModelDownloadTests(unittest.TestCase):
     """Behavior tests for extracted model download helper module."""
 
+    def test_model_repo_mapping_covers_all_supported_dit_variants(self):
+        """Download registry should cover standard and XL DiT variants explicitly."""
+
+        expected_mapping = {
+            "acestep-v15-base": "ACE-Step/acestep-v15-base",
+            "acestep-v15-sft": "ACE-Step/acestep-v15-sft",
+            "acestep-v15-turbo-shift1": "ACE-Step/acestep-v15-turbo-shift1",
+            "acestep-v15-turbo-shift3": "ACE-Step/acestep-v15-turbo-shift3",
+            "acestep-v15-turbo-continuous": "ACE-Step/acestep-v15-turbo-continuous",
+            "acestep-v15-turbo-rl": "ACE-Step/acestep-v15-turbo-rl",
+            "acestep-v15-xl-base": "ACE-Step/acestep-v15-xl-base",
+            "acestep-v15-xl-sft": "ACE-Step/acestep-v15-xl-sft",
+            "acestep-v15-xl-turbo": "ACE-Step/acestep-v15-xl-turbo",
+        }
+
+        for model_name, repo_id in expected_mapping.items():
+            with self.subTest(model_name=model_name):
+                self.assertEqual(repo_id, model_download.MODEL_REPO_MAPPING.get(model_name))
+
     def test_download_from_huggingface_uses_unified_repo_target_dir(self):
         """Unified repo downloads should target local_dir directly."""
 

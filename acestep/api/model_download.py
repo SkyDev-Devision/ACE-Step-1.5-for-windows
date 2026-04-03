@@ -14,7 +14,13 @@ MODEL_REPO_MAPPING = {
     "acestep-5Hz-lm-4B": "ACE-Step/acestep-5Hz-lm-4B",
     "acestep-v15-base": "ACE-Step/acestep-v15-base",
     "acestep-v15-sft": "ACE-Step/acestep-v15-sft",
+    "acestep-v15-turbo-shift1": "ACE-Step/acestep-v15-turbo-shift1",
     "acestep-v15-turbo-shift3": "ACE-Step/acestep-v15-turbo-shift3",
+    "acestep-v15-turbo-continuous": "ACE-Step/acestep-v15-turbo-continuous",
+    "acestep-v15-turbo-rl": "ACE-Step/acestep-v15-turbo-rl",
+    "acestep-v15-xl-base": "ACE-Step/acestep-v15-xl-base",
+    "acestep-v15-xl-sft": "ACE-Step/acestep-v15-xl-sft",
+    "acestep-v15-xl-turbo": "ACE-Step/acestep-v15-xl-turbo",
 }
 
 DEFAULT_REPO_ID = "ACE-Step/Ace-Step1.5"

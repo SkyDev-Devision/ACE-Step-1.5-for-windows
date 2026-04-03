@@ -119,16 +119,19 @@ else {
 
 # ============= Step 1: Select DiT Model | 第一步：选择 DiT 模型 =====================
 Write-Output "`n=== DiT 模型下载 / DiT Model Download ==="
-$dit_choice = Read-Host "请选择要下载的 DiT 模型 [1/2/3/4/5/6/a/n] (默认为 n)
+$dit_choice = Read-Host "请选择要下载的 DiT 模型 [1/2/3/4/5/6/7/8/9/a/n] (默认为 n)
 1: acestep-v15-turbo
 2: acestep-v15-base
 3: acestep-v15-sft
 4: acestep-v15-turbo-shift1
 5: acestep-v15-turbo-shift3
 6: acestep-v15-turbo-continuous
+7: acestep-v15-xl-base (XL 4B, >=12GB VRAM)
+8: acestep-v15-xl-sft (XL 4B, >=12GB VRAM)
+9: acestep-v15-xl-turbo (XL 4B, >=12GB VRAM)
 a: 下载全部 DiT 模型 / Download all DiT models
 n: 跳过 DiT 下载 / Skip DiT download
-Please select DiT model [1/2/3/4/5/6/a/n] (default is n)"
+Please select DiT model [1/2/3/4/5/6/7/8/9/a/n] (default is n)"
 
 $dit_models = @()
 if ($dit_choice -eq "1") {
@@ -149,13 +152,26 @@ elseif ($dit_choice -eq "5") {
 elseif ($dit_choice -eq "6") {
     $dit_models += "acestep-v15-turbo-continuous"
 }
+elseif ($dit_choice -eq "7") {
+    $dit_models += "acestep-v15-xl-base"
+}
+elseif ($dit_choice -eq "8") {
+    $dit_models += "acestep-v15-xl-sft"
+}
+elseif ($dit_choice -eq "9") {
+    $dit_models += "acestep-v15-xl-turbo"
+}
 elseif ($dit_choice -eq "a") {
     Write-Output "将下载全部 DiT 模型 / Will download all DiT models"
+    $dit_models += "acestep-v15-turbo"
     $dit_models += "acestep-v15-base"
     $dit_models += "acestep-v15-sft"
     $dit_models += "acestep-v15-turbo-shift1"
     $dit_models += "acestep-v15-turbo-shift3"
     $dit_models += "acestep-v15-turbo-continuous"
+    $dit_models += "acestep-v15-xl-base"
+    $dit_models += "acestep-v15-xl-sft"
+    $dit_models += "acestep-v15-xl-turbo"
 }
 elseif ($dit_choice -eq "" -or $dit_choice -eq "n") {
     Write-Output "跳过 DiT 模型下载 / Skipping DiT model download"
