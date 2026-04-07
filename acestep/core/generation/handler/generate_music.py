@@ -304,6 +304,12 @@ class GenerateMusicMixin:
             if audio_error is not None:
                 return audio_error
 
+            # Cover/repaint/lego/extract: lock duration to source audio.
+            if processed_src_audio is not None and task_type in (
+                "cover", "repaint", "lego", "extract",
+            ):
+                audio_duration = processed_src_audio.shape[-1] / self.sample_rate
+
             service_inputs = self._prepare_generate_music_service_inputs(
                 actual_batch_size=actual_batch_size,
                 processed_src_audio=processed_src_audio,
