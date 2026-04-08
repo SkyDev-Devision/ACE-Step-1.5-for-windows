@@ -9,6 +9,7 @@ import time
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.testclient import TestClient
@@ -134,14 +135,19 @@ class TrainApiDatasetAutoLabelRoutesHttpTests(unittest.TestCase):
         *,
         trigger_callback: bool = False,
         append_jsonl: Optional[Callable[[str, Dict[str, Any]], None]] = None,
+        model_initialized: bool = True,
+        llm_initialized: bool = True,
     ) -> TestClient:
         """Create app/client pair with lightweight dataset + model state."""
 
         app = FastAPI()
         app.state.dataset_builder = _Builder(samples=samples, trigger_callback=trigger_callback)
         app.state.dataset_json_path = "dataset.json"
-        app.state.handler = SimpleNamespace(model=object())
-        app.state.llm_handler = SimpleNamespace(llm_initialized=True)
+        app.state.handler = SimpleNamespace(model=(object() if model_initialized else None))
+        app.state._init_lock = __import__("asyncio").Lock()
+        app.state.executor = None
+        app.state._config_path = "acestep-v15-turbo"
+        app.state.llm_handler = SimpleNamespace(llm_initialized=llm_initialized)
         register_training_dataset_auto_label_routes(
             app=app,
             verify_api_key=_verify_api_key,
@@ -221,6 +227,92 @@ class TrainApiDatasetAutoLabelRoutesHttpTests(unittest.TestCase):
 
         self.assertEqual(200, response.status_code)
         self.assertEqual(["dataset_autolabel.jsonl"], append_calls)
+
+    def test_auto_label_initializes_llm_on_demand_when_uninitialized(self) -> None:
+        """POST /v1/dataset/auto_label should try one LLM init instead of failing immediately."""
+
+        client = self._build_client(samples=[_Sample()], llm_initialized=False)
+        with patch(
+            "acestep.api.train_api_dataset_auto_label_sync_route.ensure_training_labeling_llm_ready",
+            return_value=("✅ ready", True),
+        ) as mock_ensure_ready:
+            response = client.post(
+                "/v1/dataset/auto_label",
+                json={},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        self.assertEqual(200, response.status_code)
+        payload = response.json()
+        self.assertEqual(200, payload["code"])
+        mock_ensure_ready.assert_called_once()
+
+    def test_auto_label_initializes_model_on_demand_when_uninitialized(self) -> None:
+        """POST /v1/dataset/auto_label should initialize the model before labeling."""
+
+        client = self._build_client(samples=[_Sample()], model_initialized=False)
+
+        async def _mark_model_ready(_app):
+            client.app.state.handler.model = object()
+
+        with patch(
+            "acestep.api.train_api_dataset_auto_label_sync_route.ensure_primary_training_model_ready",
+            side_effect=_mark_model_ready,
+        ) as mock_ensure_model_ready:
+            response = client.post(
+                "/v1/dataset/auto_label",
+                json={},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        self.assertEqual(200, response.status_code)
+        payload = response.json()
+        self.assertEqual(200, payload["code"])
+        mock_ensure_model_ready.assert_called_once()
+
+    def test_auto_label_async_initializes_llm_on_demand_when_uninitialized(self) -> None:
+        """POST /v1/dataset/auto_label_async should try one LLM init before rejecting the task."""
+
+        client = self._build_client(samples=[_Sample()], llm_initialized=False)
+        with patch(
+            "acestep.api.train_api_dataset_auto_label_async_route.ensure_training_labeling_llm_ready",
+            return_value=("✅ ready", True),
+        ) as mock_ensure_ready:
+            response = client.post(
+                "/v1/dataset/auto_label_async",
+                json={},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        self.assertEqual(200, response.status_code)
+        payload = response.json()
+        self.assertEqual(200, payload["code"])
+        self.assertEqual("Auto-labeling task started", payload["data"]["message"])
+        mock_ensure_ready.assert_called_once()
+
+    def test_auto_label_async_initializes_model_on_demand_when_uninitialized(self) -> None:
+        """POST /v1/dataset/auto_label_async should initialize the model before queuing the task."""
+
+        client = self._build_client(samples=[_Sample()], model_initialized=False)
+
+        async def _mark_model_ready(_app):
+            client.app.state.handler.model = object()
+
+        with patch(
+            "acestep.api.train_api_dataset_auto_label_async_route.ensure_primary_training_model_ready",
+            side_effect=_mark_model_ready,
+        ) as mock_ensure_model_ready:
+            response = client.post(
+                "/v1/dataset/auto_label_async",
+                json={},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        self.assertEqual(200, response.status_code)
+        payload = response.json()
+        self.assertEqual(200, payload["code"])
+        self.assertEqual("Auto-labeling task started", payload["data"]["message"])
+        mock_ensure_model_ready.assert_called_once()
 
 
 if __name__ == "__main__":

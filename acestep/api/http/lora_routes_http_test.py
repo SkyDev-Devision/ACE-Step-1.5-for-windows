@@ -114,16 +114,22 @@ class LoraRoutesHttpTests(unittest.TestCase):
         self.assertEqual(400, payload["code"])
         self.assertEqual("failed to toggle", payload["error"])
 
-    def test_status_get_returns_http_500_when_model_not_initialized(self):
-        """GET /v1/lora/status should return HTTP 500 when handler model is missing."""
+    def test_status_get_returns_empty_state_when_model_not_initialized(self):
+        """GET /v1/lora/status should return an empty status payload in lazy mode."""
 
         handler = _FakeHandler(model=None)
         client = self._build_client(handler)
 
         response = client.get("/v1/lora/status", headers={"Authorization": "Bearer test-token"})
 
-        self.assertEqual(500, response.status_code)
-        self.assertEqual("Model not initialized", response.json()["detail"])
+        self.assertEqual(200, response.status_code)
+        payload = response.json()
+        self.assertEqual(200, payload["code"])
+        self.assertFalse(payload["data"]["model_initialized"])
+        self.assertFalse(payload["data"]["lora_loaded"])
+        self.assertFalse(payload["data"]["use_lora"])
+        self.assertEqual([], payload["data"]["adapters"])
+        self.assertEqual({}, payload["data"]["scales"])
 
     def test_requests_require_authorization_header(self):
         """GET /v1/lora/status without token should return HTTP 401 from dependency."""

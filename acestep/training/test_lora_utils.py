@@ -9,7 +9,9 @@ from acestep.training.lora_injection import (
     _unwrap_decoder,
     freeze_non_lora_parameters,
 )
+from acestep.training.configs import LoKRConfig
 from acestep.training.lora_utils import check_peft_available
+from acestep.training.lokr_utils import inject_lokr_into_dit
 
 
 class TestUnwrapDecoder(unittest.TestCase):
@@ -216,6 +218,61 @@ class TestFreezeNonLoraParameters(unittest.TestCase):
                     param.requires_grad,
                     f"Non-LoRA/non-encoder param {name} should be frozen",
                 )
+
+
+class _DummyLycorisNetwork(nn.Module):
+    """Minimal LyCORIS-like network for registration tests."""
+
+    def __init__(self):
+        super().__init__()
+        self.loras = []
+        self.scale = nn.Parameter(torch.ones(1))
+        self.apply_to_called = False
+
+    def apply_to(self):
+        """Record that apply_to() was called."""
+        self.apply_to_called = True
+
+    def restore(self):
+        """Compatibility stub for prior-network cleanup."""
+
+
+class _DummyDiTModel(nn.Module):
+    """Minimal model exposing a decoder attribute for LoKr injection."""
+
+    def __init__(self):
+        super().__init__()
+        self.decoder = nn.Linear(2, 2)
+
+
+class TestInjectLoKrIntoDiT(unittest.TestCase):
+    """Test cases for inject_lokr_into_dit training integration."""
+
+    @patch("acestep.training.lokr_utils.create_lycoris")
+    @patch("acestep.training.lokr_utils.LycorisNetwork")
+    @patch("acestep.training.lokr_utils.LYCORIS_AVAILABLE", True)
+    def test_stores_lycoris_handle_without_registering_decoder_submodule(
+        self,
+        mock_lycoris_network_cls,
+        mock_create_lycoris,
+    ):
+        """The decoder handle should exist without polluting the module tree."""
+        net = _DummyLycorisNetwork()
+        mock_create_lycoris.return_value = net
+        mock_lycoris_network_cls.apply_preset = MagicMock()
+        model = _DummyDiTModel()
+        config = LoKRConfig(
+            linear_dim=4,
+            linear_alpha=8,
+            factor=-1,
+            target_modules=["q_proj"],
+        )
+
+        inject_lokr_into_dit(model, config)
+
+        self.assertIs(getattr(model.decoder, "_lycoris_net"), net)
+        self.assertNotIn("_lycoris_net", model.decoder._modules)
+        self.assertTrue(net.apply_to_called)
 
 
 if __name__ == "__main__":

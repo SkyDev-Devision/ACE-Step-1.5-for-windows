@@ -248,6 +248,56 @@ def _unwrap_stale_fabric_decoder(model: nn.Module) -> bool:
     return unwrapped
 
 
+def _collect_meta_parameter_names(
+    module: Optional[nn.Module],
+    *,
+    prefix: str,
+) -> List[str]:
+    """Return fully qualified names of meta parameters within a module."""
+    if module is None:
+        return []
+    meta_names: List[str] = []
+    for name, param in module.named_parameters():
+        if getattr(param, "is_meta", False):
+            meta_names.append(f"{prefix}.{name}")
+    return meta_names
+
+
+def _move_auxiliary_trainable_module(
+    module: Optional[nn.Module],
+    *,
+    device: torch.device,
+    dtype: torch.dtype,
+    label: str,
+) -> None:
+    """Move an auxiliary trainable module and fail early on meta tensors.
+
+    LyCORIS networks are tracked separately from the decoder tree during
+    training so Lightning Fabric will not move them automatically.
+
+    Args:
+        module: Auxiliary module to move.
+        device: Target device.
+        dtype: Target dtype.
+        label: Human-readable module label for diagnostics.
+
+    Raises:
+        RuntimeError: If the auxiliary module still contains meta parameters.
+    """
+    if module is None:
+        return
+
+    meta_names = _collect_meta_parameter_names(module, prefix=label)
+    if meta_names:
+        preview = ", ".join(meta_names[:8])
+        remainder = "" if len(meta_names) <= 8 else f" ... (+{len(meta_names) - 8} more)"
+        raise RuntimeError(
+            f"{label} contains meta parameters before device move: {preview}{remainder}"
+        )
+
+    module.to(device=device, dtype=dtype)
+
+
 def _iter_module_wrappers(module: nn.Module) -> List[nn.Module]:
     """Collect wrapper chain modules (Fabric/PEFT/compile/base-model wrappers)."""
     modules: List[nn.Module] = []
@@ -1583,6 +1633,12 @@ class LoKRTrainer:
         # round-trip casts on every forward/backward.  Keep everything in compute
         # dtype and let Fabric bf16-mixed autocast handle precision.
         self.module.model = self.module.model.to(self.module.dtype)
+        _move_auxiliary_trainable_module(
+            getattr(self.module, "lycoris_net", None),
+            device=self.module.device,
+            dtype=self.module.dtype,
+            label="lycoris_net",
+        )
 
         train_loader = data_module.train_dataloader()
         trainable_params = _collect_lokr_trainable_params(
@@ -1875,6 +1931,12 @@ class LoKRTrainer:
 
         # LyCORIS LoKr: uniform dtype — same rationale as _train_with_fabric.
         self.module.model = self.module.model.to(self.module.dtype)
+        _move_auxiliary_trainable_module(
+            getattr(self.module, "lycoris_net", None),
+            device=self.module.device,
+            dtype=self.module.dtype,
+            label="lycoris_net",
+        )
 
         train_loader = data_module.train_dataloader()
         trainable_params = _collect_lokr_trainable_params(

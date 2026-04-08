@@ -10,6 +10,8 @@ from typing import Any, List, Optional, Tuple
 import gradio as gr
 
 from acestep.training.dataset_builder import DatasetBuilder
+from acestep.training.labeling_llm_init import ensure_training_labeling_llm_ready
+from acestep.training.labeling_model_init import ensure_training_labeling_model_ready
 from .training_utils import _safe_slider
 
 
@@ -83,18 +85,22 @@ def auto_label_all(
         return [], "❌ No samples to label. Please scan a directory first.", builder_state
 
     if dit_handler is None or dit_handler.model is None:
-        return (
-            builder_state.get_samples_dataframe_data(),
-            "❌ Model not initialized. Please initialize the service first.",
-            builder_state,
-        )
+        model_status, model_ready = ensure_training_labeling_model_ready(dit_handler)
+        if not model_ready:
+            return (
+                builder_state.get_samples_dataframe_data(),
+                model_status,
+                builder_state,
+            )
 
     if llm_handler is None or not llm_handler.llm_initialized:
-        return (
-            builder_state.get_samples_dataframe_data(),
-            "❌ LLM not initialized. Please initialize the service with LLM enabled.",
-            builder_state,
-        )
+        llm_status, llm_ready = ensure_training_labeling_llm_ready(llm_handler)
+        if not llm_ready:
+            return (
+                builder_state.get_samples_dataframe_data(),
+                llm_status,
+                builder_state,
+            )
 
     def progress_callback(msg):
         if progress:

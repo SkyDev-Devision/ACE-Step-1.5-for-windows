@@ -99,18 +99,23 @@ class LoraRoutesTests(unittest.TestCase):
         self.assertEqual(200, result["code"])
         self.assertEqual("main", result["data"]["adapter_name"])
 
-    def test_status_route_raises_when_model_not_initialized(self):
-        """Status endpoint should reject requests when model is unavailable."""
+    def test_status_route_returns_empty_state_when_model_not_initialized(self):
+        """Status endpoint should expose empty state for lazy-uninitialized model."""
 
         handler = _FakeHandler(model=None)
         app = self._build_app(handler)
         endpoint = _get_route_endpoint(app, "/v1/lora/status", "GET")
 
-        with self.assertRaises(HTTPException) as ctx:
-            asyncio.run(endpoint(None))
+        result = asyncio.run(endpoint(None))
 
-        self.assertEqual(500, ctx.exception.status_code)
-        self.assertIn("Model not initialized", str(ctx.exception.detail))
+        self.assertEqual(200, result["code"])
+        self.assertFalse(result["data"]["model_initialized"])
+        self.assertFalse(result["data"]["lora_loaded"])
+        self.assertFalse(result["data"]["use_lora"])
+        self.assertEqual(1.0, result["data"]["lora_scale"])
+        self.assertEqual([], result["data"]["adapters"])
+        self.assertEqual({}, result["data"]["scales"])
+        self.assertEqual([], handler.calls)
 
     def test_scale_route_accepts_warning_prefix_as_success(self):
         """Scale endpoint should treat warning-prefixed responses as success."""

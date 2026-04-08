@@ -42,6 +42,24 @@ def _require_initialized_handler(app: FastAPI) -> AceStepHandler:
     return handler
 
 
+def _serialize_lora_status(handler: AceStepHandler, status: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Build a stable LoRA status payload, including lazy-uninitialized state."""
+
+    payload = status or {}
+    model = getattr(handler, "model", None)
+    return {
+        "model_initialized": model is not None,
+        "lora_loaded": bool(payload.get("loaded", getattr(handler, "lora_loaded", False))),
+        "use_lora": bool(payload.get("active", getattr(handler, "use_lora", False))),
+        "lora_scale": float(payload.get("scale", getattr(handler, "lora_scale", 1.0))),
+        "adapter_type": getattr(handler, "_adapter_type", None),
+        "scales": payload.get("scales", {}),
+        "active_adapter": payload.get("active_adapter"),
+        "adapters": payload.get("adapters", []),
+        "synthetic_default_mode": bool(payload.get("synthetic_default_mode", False)),
+    }
+
+
 def _is_success_message(result: str, allow_warning: bool = False) -> bool:
     """Check whether backend operation result is considered successful."""
 
@@ -133,17 +151,11 @@ def register_lora_routes(
     async def get_lora_status_endpoint(_: None = Depends(verify_api_key)):
         """Get current LoRA/LoKr adapter state for the primary handler."""
 
-        handler = _require_initialized_handler(app)
+        handler: AceStepHandler = app.state.handler
+        if handler is None:
+            raise HTTPException(status_code=500, detail="Service not initialized")
+        if getattr(handler, "model", None) is None:
+            return wrap_response(_serialize_lora_status(handler))
+
         status = handler.get_lora_status()
-        return wrap_response(
-            {
-                "lora_loaded": bool(status.get("loaded", getattr(handler, "lora_loaded", False))),
-                "use_lora": bool(status.get("active", getattr(handler, "use_lora", False))),
-                "lora_scale": float(status.get("scale", getattr(handler, "lora_scale", 1.0))),
-                "adapter_type": getattr(handler, "_adapter_type", None),
-                "scales": status.get("scales", {}),
-                "active_adapter": status.get("active_adapter"),
-                "adapters": status.get("adapters", []),
-                "synthetic_default_mode": bool(status.get("synthetic_default_mode", False)),
-            }
-        )
+        return wrap_response(_serialize_lora_status(handler, status))

@@ -71,7 +71,7 @@ if ($Share) {
 # Initialize service
 if ($InitService) {
   [void]$ext_args.Add("--init_service")
-  [void]$ext_args.Add("false")
+  [void]$ext_args.Add("true")
 }
 
 # Model paths

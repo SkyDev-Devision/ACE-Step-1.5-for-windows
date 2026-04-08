@@ -14,9 +14,11 @@ from acestep.api.train_api_dataset_models import (
     _derive_jsonl_path,
     _serialize_samples,
 )
+from acestep.api.train_api_model_readiness import ensure_primary_training_model_ready
 from acestep.api.train_api_runtime import RuntimeComponentManager
 from acestep.handler import AceStepHandler
 from acestep.llm_inference import LLMHandler
+from acestep.training.labeling_llm_init import ensure_training_labeling_llm_ready
 
 
 def register_training_dataset_auto_label_sync_route(
@@ -41,10 +43,16 @@ def register_training_dataset_auto_label_sync_route(
         llm: LLMHandler = app.state.llm_handler
 
         if handler is None or handler.model is None:
-            raise HTTPException(status_code=500, detail="Model not initialized")
+            try:
+                await ensure_primary_training_model_ready(app)
+                handler = app.state.handler
+            except RuntimeError as exc:
+                raise HTTPException(status_code=500, detail=str(exc)) from exc
 
         if llm is None or not llm.llm_initialized:
-            raise HTTPException(status_code=500, detail="LLM not initialized")
+            llm_status, llm_ready = ensure_training_labeling_llm_ready(llm, app.state)
+            if not llm_ready:
+                raise HTTPException(status_code=500, detail=llm_status)
 
         mgr = RuntimeComponentManager(handler=handler, llm=llm, app_state=app.state)
         mgr.offload_decoder_to_cpu()

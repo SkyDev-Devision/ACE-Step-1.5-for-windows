@@ -61,12 +61,23 @@ class RuntimeComponentManager:
         except Exception:
             return None
 
-    @staticmethod
-    def _move_module(module: Any, device: str, dtype: Any = None) -> None:
-        """Move a module to a target device/dtype when possible."""
+    def _move_module(self, module: Any, device: str, dtype: Any = None) -> None:
+        """Move a module to a target device/dtype when possible.
+
+        Prefers the handler's canonical recursive mover so training offload
+        semantics stay aligned with generation lazy-load transfer behavior.
+        Falls back to direct ``module.to(...)`` calls for older handlers or
+        mocked test doubles that do not expose the recursive helper.
+        """
 
         if module is None:
             return
+
+        recursive_move = getattr(self.handler, "_recursive_to_device", None)
+        if callable(recursive_move):
+            recursive_move(module, device, dtype)
+            return
+
         try:
             if dtype is None:
                 module.to(device)

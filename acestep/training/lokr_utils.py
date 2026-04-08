@@ -5,6 +5,7 @@ import os
 from typing import Any, Dict, Optional, Tuple
 
 import torch
+import torch.nn as nn
 from loguru import logger
 
 from acestep.training.configs import LoKRConfig
@@ -26,6 +27,26 @@ except ImportError:
 def check_lycoris_available() -> bool:
     """Check if LyCORIS is importable."""
     return LYCORIS_AVAILABLE
+
+
+def _set_module_handle(
+    module: nn.Module,
+    name: str,
+    value: nn.Module,
+) -> None:
+    """Attach a module handle without registering it in the parent's module tree.
+
+    Training keeps a direct ``lycoris_net`` reference already. Registering the
+    same network as ``decoder._lycoris_net`` makes generic traversals such as
+    ``Module.to()`` and Lightning Fabric walk into the adapter manager object,
+    which is lifecycle state rather than part of the decoder structure.
+
+    Args:
+        module: Parent module receiving the handle.
+        name: Attribute name to expose.
+        value: Module-like handle to expose without registration.
+    """
+    module.__dict__[name] = value
 
 
 def inject_lokr_into_dit(
@@ -73,45 +94,41 @@ def inject_lokr_into_dit(
         }
     )
 
-    lycoris_net = create_lycoris(
-        decoder,
-        multiplier,
-        linear_dim=lokr_config.linear_dim,
-        linear_alpha=lokr_config.linear_alpha,
-        algo="lokr",
-        factor=lokr_config.factor,
-        decompose_both=lokr_config.decompose_both,
-        use_tucker=lokr_config.use_tucker,
-        use_scalar=lokr_config.use_scalar,
-        full_matrix=lokr_config.full_matrix,
-        bypass_mode=lokr_config.bypass_mode,
-        rs_lora=lokr_config.rs_lora,
-        unbalanced_factorization=lokr_config.unbalanced_factorization,
-    )
-
+    create_kwargs = {
+        "linear_dim": lokr_config.linear_dim,
+        "linear_alpha": lokr_config.linear_alpha,
+        "algo": "lokr",
+        "factor": lokr_config.factor,
+        "decompose_both": lokr_config.decompose_both,
+        "use_tucker": lokr_config.use_tucker,
+        "use_scalar": lokr_config.use_scalar,
+        "full_matrix": lokr_config.full_matrix,
+        "bypass_mode": lokr_config.bypass_mode,
+        "rs_lora": lokr_config.rs_lora,
+        "unbalanced_factorization": lokr_config.unbalanced_factorization,
+    }
     if lokr_config.weight_decompose:
-        try:
-            lycoris_net = create_lycoris(
-                decoder,
-                multiplier,
-                linear_dim=lokr_config.linear_dim,
-                linear_alpha=lokr_config.linear_alpha,
-                algo="lokr",
-                factor=lokr_config.factor,
-                decompose_both=lokr_config.decompose_both,
-                use_tucker=lokr_config.use_tucker,
-                use_scalar=lokr_config.use_scalar,
-                full_matrix=lokr_config.full_matrix,
-                bypass_mode=lokr_config.bypass_mode,
-                rs_lora=lokr_config.rs_lora,
-                unbalanced_factorization=lokr_config.unbalanced_factorization,
-                dora_wd=True,
-            )
-        except Exception as exc:
-            logger.warning(f"DoRA mode not supported in current LyCORIS build: {exc}")
+        create_kwargs["dora_wd"] = True
+
+    try:
+        lycoris_net = create_lycoris(
+            decoder,
+            multiplier,
+            **create_kwargs,
+        )
+    except Exception as exc:
+        if not lokr_config.weight_decompose:
+            raise
+        logger.warning(f"DoRA mode not supported in current LyCORIS build: {exc}")
+        create_kwargs.pop("dora_wd", None)
+        lycoris_net = create_lycoris(
+            decoder,
+            multiplier,
+            **create_kwargs,
+        )
 
     lycoris_net.apply_to()
-    decoder._lycoris_net = lycoris_net
+    _set_module_handle(decoder, "_lycoris_net", lycoris_net)
 
     # IMPORTANT: LyCORIS preset/create_lycoris already handles target-module
     # selection. Re-filtering by fragile name matching here can accidentally

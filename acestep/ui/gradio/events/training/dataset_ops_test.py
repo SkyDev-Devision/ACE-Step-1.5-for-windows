@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from acestep.ui.gradio.events.training.dataset_ops import (
+    auto_label_all,
     get_sample_preview,
     save_sample_edit,
     update_settings,
@@ -97,6 +98,115 @@ class TestSaveDataset(unittest.TestCase):
         builder.samples = [MagicMock()]
         status, _ = save_dataset("", "name", builder)
         self.assertIn("❌", status)
+
+
+class TestAutoLabelAll(unittest.TestCase):
+    """Tests for auto_label_all lazy-initialization behavior."""
+
+    @patch("acestep.ui.gradio.events.training.dataset_ops.gr.update", side_effect=lambda **kwargs: kwargs)
+    @patch(
+        "acestep.ui.gradio.events.training.dataset_ops.ensure_training_labeling_model_ready",
+        return_value=("✅ Model initialized", True),
+    )
+    @patch(
+        "acestep.ui.gradio.events.training.dataset_ops.ensure_training_labeling_llm_ready",
+        return_value=("✅ LLM initialized", True),
+    )
+    def test_initializes_model_and_llm_on_demand_before_labeling(
+        self,
+        mock_ensure_llm_ready,
+        mock_ensure_model_ready,
+        _mock_gr_update,
+    ):
+        builder = MagicMock()
+        builder.samples = [MagicMock()]
+        builder.get_samples_dataframe_data.return_value = [["sample.wav", "caption"]]
+        builder.label_all_samples.return_value = (builder.samples, "✅ labeled")
+
+        dit_handler = MagicMock()
+        dit_handler.model = None
+        llm_handler = MagicMock()
+        llm_handler.llm_initialized = False
+
+        table_update, status_update, returned_builder = auto_label_all(
+            dit_handler,
+            llm_handler,
+            builder,
+        )
+
+        mock_ensure_model_ready.assert_called_once_with(dit_handler)
+        mock_ensure_llm_ready.assert_called_once_with(llm_handler)
+        builder.label_all_samples.assert_called_once()
+        self.assertEqual([["sample.wav", "caption"]], table_update["value"])
+        self.assertEqual("✅ labeled", status_update["value"])
+        self.assertIs(returned_builder, builder)
+
+    @patch("acestep.ui.gradio.events.training.dataset_ops.gr.update", side_effect=lambda **kwargs: kwargs)
+    @patch(
+        "acestep.ui.gradio.events.training.dataset_ops.ensure_training_labeling_model_ready",
+        return_value=("❌ Model init failed", False),
+    )
+    def test_returns_model_init_error_when_lazy_initialization_fails(
+        self,
+        mock_ensure_model_ready,
+        _mock_gr_update,
+    ):
+        builder = MagicMock()
+        builder.samples = [MagicMock()]
+        builder.get_samples_dataframe_data.return_value = [["sample.wav", "caption"]]
+
+        dit_handler = MagicMock()
+        dit_handler.model = None
+        llm_handler = MagicMock()
+        llm_handler.llm_initialized = True
+
+        table_update, status_update, returned_builder = auto_label_all(
+            dit_handler,
+            llm_handler,
+            builder,
+        )
+
+        mock_ensure_model_ready.assert_called_once_with(dit_handler)
+        builder.label_all_samples.assert_not_called()
+        self.assertEqual([["sample.wav", "caption"]], table_update)
+        self.assertEqual("❌ Model init failed", status_update)
+        self.assertIs(returned_builder, builder)
+
+    @patch("acestep.ui.gradio.events.training.dataset_ops.gr.update", side_effect=lambda **kwargs: kwargs)
+    @patch(
+        "acestep.ui.gradio.events.training.dataset_ops.ensure_training_labeling_model_ready",
+        return_value=("✅ Model initialized", True),
+    )
+    @patch(
+        "acestep.ui.gradio.events.training.dataset_ops.ensure_training_labeling_llm_ready",
+        return_value=("❌ LLM init failed", False),
+    )
+    def test_returns_llm_init_error_when_lazy_initialization_fails(
+        self,
+        mock_ensure_llm_ready,
+        _mock_ensure_model_ready,
+        _mock_gr_update,
+    ):
+        builder = MagicMock()
+        builder.samples = [MagicMock()]
+        builder.get_samples_dataframe_data.return_value = [["sample.wav", "caption"]]
+
+        dit_handler = MagicMock()
+        dit_handler.model = None
+        llm_handler = MagicMock()
+        llm_handler.llm_initialized = False
+
+        table_update, status_update, returned_builder = auto_label_all(
+            dit_handler,
+            llm_handler,
+            builder,
+        )
+
+        mock_ensure_llm_ready.assert_called_once_with(llm_handler)
+        builder.label_all_samples.assert_not_called()
+        self.assertEqual([["sample.wav", "caption"]], table_update)
+        self.assertEqual("❌ LLM init failed", status_update)
+        self.assertIs(returned_builder, builder)
 
 
 if __name__ == "__main__":
