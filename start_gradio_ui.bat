@@ -303,7 +303,7 @@ if exist "%~dp0python_embedded\python.exe" (
     echo.
 
     REM Build command with optional parameters
-    set "ACESTEP_ARGS=acestep --port %PORT% --server-name %SERVER_NAME% --language %LANGUAGE%"
+    set "ACESTEP_ARGS=--port %PORT% --server-name %SERVER_NAME% --language %LANGUAGE%"
     if not "%SHARE%"=="" set "ACESTEP_ARGS=!ACESTEP_ARGS! %SHARE%"
     if not "%CONFIG_PATH%"=="" set "ACESTEP_ARGS=!ACESTEP_ARGS! %CONFIG_PATH%"
     if not "%LM_MODEL_PATH%"=="" set "ACESTEP_ARGS=!ACESTEP_ARGS! %LM_MODEL_PATH%"
@@ -317,27 +317,19 @@ if exist "%~dp0python_embedded\python.exe" (
     if not "%AUTH_USERNAME%"=="" set "ACESTEP_ARGS=!ACESTEP_ARGS! %AUTH_USERNAME%"
     if not "%AUTH_PASSWORD%"=="" set "ACESTEP_ARGS=!ACESTEP_ARGS! %AUTH_PASSWORD%"
 
-    uv run !ACESTEP_ARGS!
+    "%~dp0.venv\Scripts\python.exe" -m acestep.acestep_v15_pipeline !ACESTEP_ARGS!
     if !ERRORLEVEL! NEQ 0 (
         echo.
-        echo [Retry] Online dependency resolution failed, retrying in offline mode...
+        echo ========================================
+        echo [Error] Failed to start ACE-Step
+        echo ========================================
         echo.
-        uv run --offline !ACESTEP_ARGS!
-        if !ERRORLEVEL! NEQ 0 (
-            echo.
-            echo ========================================
-            echo [Error] Failed to start ACE-Step
-            echo ========================================
-            echo.
-            echo Both online and offline modes failed.
-            echo Please check:
-            echo   1. Your internet connection ^(for first-time setup^)
-            echo   2. If dependencies were previously installed ^(offline mode requires a prior successful install^)
-            echo   3. Try running: uv sync --offline
-            echo.
-            pause
-            exit /b 1
-        )
+        echo Please check:
+        echo   1. Run: uv sync
+        echo   2. Or run: python -m acestep.acestep_v15_pipeline
+        echo.
+        pause
+        exit /b 1
     )
 )
 

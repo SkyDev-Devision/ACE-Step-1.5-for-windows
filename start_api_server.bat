@@ -277,32 +277,24 @@ if exist "%~dp0python_embedded\python.exe" (
     echo.
 
     REM Build command with optional parameters
-    set "ACESTEP_ARGS=acestep-api --host %HOST% --port %PORT%"
+    set "ACESTEP_ARGS=--host %HOST% --port %PORT%"
     if not "%API_KEY%"=="" set "ACESTEP_ARGS=!ACESTEP_ARGS! %API_KEY%"
     if not "%DOWNLOAD_SOURCE%"=="" set "ACESTEP_ARGS=!ACESTEP_ARGS! %DOWNLOAD_SOURCE%"
     if not "%LM_MODEL_PATH%"=="" set "ACESTEP_ARGS=!ACESTEP_ARGS! %LM_MODEL_PATH%"
 
-    uv run --no-sync !ACESTEP_ARGS!
+    "%~dp0.venv\Scripts\python.exe" -m acestep.api_server !ACESTEP_ARGS!
     if !ERRORLEVEL! NEQ 0 (
         echo.
-        echo [Retry] Online dependency resolution failed, retrying in offline mode...
+        echo ========================================
+        echo [Error] Failed to start ACE-Step API Server
+        echo ========================================
         echo.
-        uv run --offline --no-sync !ACESTEP_ARGS!
-        if !ERRORLEVEL! NEQ 0 (
-            echo.
-            echo ========================================
-            echo [Error] Failed to start ACE-Step API Server
-            echo ========================================
-            echo.
-            echo Both online and offline modes failed.
-            echo Please check:
-            echo   1. Your internet connection ^(for first-time setup^)
-            echo   2. If dependencies were previously installed ^(offline mode requires a prior successful install^)
-            echo   3. Try running: uv sync --offline
-            echo.
-            pause
-            exit /b 1
-        )
+        echo Please check:
+        echo   1. Run: uv sync
+        echo   2. Or run: python -m acestep.api_server
+        echo.
+        pause
+        exit /b 1
     )
 )
 
